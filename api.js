@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from "express";
 import mongoose from "mongoose";
 import Frequencia from "./Frequencia.js";
@@ -12,19 +13,6 @@ import cors from "cors";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Add these headers before any other middleware or routes
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', '*');
-    
-    // Handle preflight
-    if (req.method === 'OPTIONS') {
-        return res.status(200).send();
-    }
-    next();
-});
-
 // Configurações básicas primeiro
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
@@ -36,11 +24,11 @@ app.use(cors({
     allowedHeaders: '*'
 }));
 
-const SECRET = "seuSegredoSuperSeguro";
+const SECRET = process.env.JWT_SECRET;
 
 const connectDB = async () => {
     try {
-        await mongoose.connect('mongodb://mongo:zIpKJZQSviaVIPgvjcddjhCiJuiWudXP@switchyard.proxy.rlwy.net:43714');
+        await mongoose.connect(process.env.MONGO_URI);
         console.log("Conectado ao MongoDB");
     } catch (error) {
         console.log("Erro ao conectar ao MongoDB", error);
@@ -63,26 +51,6 @@ const autenticarToken = (req, res, next) => {
     } catch (error) {
         res.status(403).json({ erro: "Token inválido ou expirado!" });
     }
-};
-
-const verifyToken = (req, res, next) => {
-  const bearerHeader = req.headers['authorization'];
-  
-  if (!bearerHeader) {
-    return res.status(401).json({ error: 'Acesso não autorizado. Token não fornecido.' });
-  }
-  
-  try {
-    const bearer = bearerHeader.split(' ');
-    const token = bearer[1];
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    console.error('Erro ao verificar token:', error.message);
-    return res.status(401).json({ error: 'Token inválido ou expirado' });
-  }
 };
 
 function preencherHorarioTrabalho(horarioTrabalho) {
@@ -284,10 +252,10 @@ app.get("/proxy/horario-brasilia", async (req, res) => {
 app.post('/auth/kiosk', (req, res) => {
   const { kioskSecret } = req.body;
   
-  if (kioskSecret === "FacialPoint2025") {
+  if (kioskSecret === process.env.KIOSK_SECRET) {
     const kioskToken = jwt.sign(
       { type: 'kiosk', permissions: ['read_users'] },
-      "sua_chave_secreta_jwt_aqui", 
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
     

@@ -1,10 +1,11 @@
+import 'dotenv/config';
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import User from "./user.js";
 
 const createAdmin = async () => {
     try {
-        await mongoose.connect('mongodb://mongo:zIpKJZQSviaVIPgvjcddjhCiJuiWudXP@switchyard.proxy.rlwy.net:43714'); 
+        await mongoose.connect(process.env.MONGO_URI);
         console.log("Conectado ao MongoDB");
 
         const adminExists = await User.findOne({ role: "administrador" });
@@ -13,9 +14,9 @@ const createAdmin = async () => {
             return;
         }
 
-        const nome ="Administrador";
-        const email ="admin@facialpoint.com"; 
-        const senha ="123"; 
+        const nome = process.env.ADMIN_NOME || "Administrador";
+        const email = process.env.ADMIN_EMAIL;
+        const senha = process.env.ADMIN_SENHA;
 
         const senhaCriptografada = await bcrypt.hash(senha, 10);
 
